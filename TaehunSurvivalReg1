@@ -1,0 +1,28 @@
+attach(ds)
+SamsungSurv<-Surv(TIME, Turnover==1)
+
+#Overall survival curv
+summary(survfit(Surv(TIME, Turnover==1)~1, data=ds))
+plot(survfit(Surv(TIME, Turnover==1)~1, data=ds)
+
+detach(ds)
+#Weibull model:
+# Cannot function when event times=0.
+# First work around: remove the five rows where TIME = 0
+
+
+ds2<-ds[ds$TIME>0, ]
+attach(ds2)
+head(Entering.Company)
+
+SamsungWeibull <- survreg(Surv(TIME, Turnover==1)~1, dist='weibull')
+summary(SamsungWeibull)
+
+#Broken up by company?
+SamsungWeibull <- survreg(Surv(TIME, Turnover==1)~Entering.Company, dist='weibull')
+summary(SamsungWeibull)
+
+#Broken up by manu.sales.research
+SamsungWeibull <- survreg(Surv(TIME, Turnover==1)~Manu.Sales.Research, dist='weibull')
+summary(SamsungWeibull)
+
