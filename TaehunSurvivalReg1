@@ -1,15 +1,38 @@
+ds<-read.csv("Local Employee_Samsung_Eng.csv")
+library(survival)
+library(graphics)
+
 attach(ds)
 SamsungSurv<-Surv(TIME, Turnover==1)
 
+
 #Overall survival curv
 summary(survfit(Surv(TIME, Turnover==1)~1, data=ds))
-plot(survfit(Surv(TIME, Turnover==1)~1, data=ds)
+plot(survfit(Surv(TIME, Turnover==1)~1, data=ds))
+
+#Differences between Manufacturing, Sales, and Research
+survdiff(Surv(TIME, Turnover==1)~Manu.Sales.Research, data=ds)
+summary(survfit(Surv(TIME, Turnover==1)~Manu.Sales.Research))
+
+#Honest graph
+LegendText<-c("Manufacturing", "Sales", "Research")
+plot(survfit(Surv(TIME, Turnover==1)~Manu.Sales.Research), col=c("Black", "Blue", "Red"))
+
+legend(1,0.25,legend=LegendText,lwd =c(1, 1, 1), col=c("Black", "Blue", "Red"))
+
+
+#'Zoomed-in' graph
+LegendText<-c("Manufacturing", "Sales", "Research")
+plot(survfit(Surv(TIME, Turnover==1)~Manu.Sales.Research), col=c("Black", "Blue", "Red"), ylim=c(.9, 1), conf.band=TRUE)
+legend(9,1,legend=LegendText,lwd =c(1, 1, 1), col=c("Black", "Blue", "Red"))
+
 
 detach(ds)
+
+
 #Weibull model:
 # Cannot function when event times=0.
 # First work around: remove the five rows where TIME = 0
-
 
 ds2<-ds[ds$TIME>0, ]
 attach(ds2)
@@ -23,6 +46,30 @@ SamsungWeibull <- survreg(Surv(TIME, Turnover==1)~Entering.Company, dist='weibul
 summary(SamsungWeibull)
 
 #Broken up by manu.sales.research
-SamsungWeibull <- survreg(Surv(TIME, Turnover==1)~Manu.Sales.Research, dist='weibull')
-summary(SamsungWeibull)
+SamsungWeibull_Job <- survreg(Surv(TIME, Turnover==1)~Manu.Sales.Research, dist='weibull')
+summary(SamsungWeibull_Job)
+
+Samsung1_H<-coxph(Surv(TIME, Turnover==1)~Manu.Sales.Research, data=ds2)
+summary(Samsung1_H)
+
+
+#Manu.Sales.Research, Marriage
+SamsungWeibull_Job_Married <- survreg(Surv(TIME, Turnover==1)~Manu.Sales.Research + Marriage, dist='weibull')
+summary(SamsungWeibull_Job_Married)
+
+SamsungH_Job_Married <- coxph(Surv(TIME, Turnover==1)~Manu.Sales.Research + Marriage)
+SamsungH_Job_Married
+
+#Testing the appropriateness of the Weibull distribution
+#Tests for proportionality of hazards. Recall that, evidence of proportional hazards implies evidence of AFT assumption in a Weibull model
+cox.zph(SamsungH_Job_Married)
+plot(cox.zph(SamsungH_Job_Married))
+
+#Results: 
+# Global test hits significance, suggesting that hazard is not proportional across the levels of these two specific covariates.
+#     Graph departs from straight horizontal line. 
+# P of marriage variable hits significance: hazards associated with marriage status are not proportional.
+# P of Manu.Sales.Research: significant, hazard is likely proportionate across job types (probably because jobtype doesn't seem to matter at all)
+
+
 
